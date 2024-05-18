@@ -1,0 +1,6 @@
+__*py*__
+# mypy sintax checker makes this folder
+.mypy_cache/
+# this is where you put your own media(.mp4, .webm, etc, anything a modern web browser can show)
+media/*
+
