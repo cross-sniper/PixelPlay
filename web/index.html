@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Media Server</title>
+    <style type="text/css">
+        body {
+            background: black;
+            color: white;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .video-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+        }
+        .video-player {
+            width: 100%;
+        }
+        .video-controls {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 10px;
+            box-sizing: border-box;
+        }
+        .video-controls button {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 5px;
+            transition: color 0.3s;
+        }
+        .video-controls button:hover {
+            color: #999;
+        }
+        .video-time {
+            color: #999;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="video-container">
+        <video class="video-player" controls style="display:none;">
+            <source src="" type="" id="vid-source">
+            Your browser does not support the video tag.
+        </video>
+        <div class="video-controls" style="display:none;">
+            <button id="play-pause">&#9658;</button>
+            <span class="video-time" id="current-time">00:00</span>
+            <input type="range" id="seek-bar" value="0">
+            <span class="video-time" id="duration">00:00</span>
+            <button id="mute">🔊</button>
+            <input type="range" id="volume-bar" min="0" max="1" step="0.1" value="1">
+            <button id="full-screen">⛶</button>
+        </div>
+    </div>
+
+    <div class="files">
+        <h1>Media Files</h1>
+        <ul id="media-list"></ul>
+    </div>
+
+    <script>
+        const vidSource = document.getElementById('vid-source');
+        const videoElement = vidSource.parentElement;
+        const playPauseButton = document.getElementById('play-pause');
+        const muteButton = document.getElementById('mute');
+        const volumeBar = document.getElementById('volume-bar');
+        const fullScreenButton = document.getElementById('full-screen');
+        const seekBar = document.getElementById('seek-bar');
+        const currentTimeLabel = document.getElementById('current-time');
+        const durationLabel = document.getElementById('duration');
+
+        // Update video controls when video time changes
+        videoElement.ontimeupdate = function() {
+            const currentMinutes = Math.floor(videoElement.currentTime / 60);
+            const currentSeconds = Math.floor(videoElement.currentTime - currentMinutes * 60);
+            const durationMinutes = Math.floor(videoElement.duration / 60);
+            const durationSeconds = Math.floor(videoElement.duration - durationMinutes * 60);
+            currentTimeLabel.innerHTML = `${currentMinutes}:${currentSeconds < 10 ? '0' : ''}${currentSeconds}`;
+            durationLabel.innerHTML = `${durationMinutes}:${durationSeconds < 10 ? '0' : ''}${durationSeconds}`;
+
+            // Update seek bar value
+            seekBar.value = (videoElement.currentTime / videoElement.duration) * 100;
+        };
+
+        // Play/pause video
+        playPauseButton.onclick = function() {
+            if (videoElement.paused || videoElement.ended) {
+                videoElement.play();
+                playPauseButton.innerHTML = '&#10074;&#10074;'; // Pause symbol
+            } else {
+                videoElement.pause();
+                playPauseButton.innerHTML = '&#9658;'; // Play symbol
+            }
+        };
+
+        // Mute/unmute video
+        muteButton.onclick = function() {
+            if (videoElement.muted) {
+                videoElement.muted = false;
+                muteButton.innerHTML = '🔊';
+            } else {
+                videoElement.muted = true;
+                muteButton.innerHTML = '🔇';
+            }
+        };
+
+        // Change volume
+        volumeBar.oninput = function() {
+            videoElement.volume = volumeBar.value;
+        };
+
+        // Enter/exit full screen
+        fullScreenButton.onclick = function() {
+            if (videoElement.requestFullscreen) {
+                videoElement.requestFullscreen();
+            } else if (videoElement.mozRequestFullScreen) { /* Firefox */
+                videoElement.mozRequestFullScreen();
+            } else if (videoElement.webkitRequestFullscreen) { /* Chrome, Safari and Opera */
+                videoElement.webkitRequestFullscreen();
+            } else if (videoElement.msRequestFullscreen) { /* IE/Edge */
+                videoElement.msRequestFullscreen();
+            }
+        };
+
+        function play(file) {
+            vidSource.src = `/media/${file}`;
+            const fileExtension = file.split('.').pop();
+            let mimeType = '';
+            videoElement.loop = false;
+
+            switch(fileExtension) {
+                case 'mp4':
+                    mimeType = 'video/mp4';
+                    break;
+                case 'webm':
+                    mimeType = 'video/webm';
+                    break;
+                case 'gif':
+                    mimeType = 'image/gif';
+                    videoElement.loop = true;
+                    break;
+                default:
+                    mimeType = '';
+            }
+            vidSource.type = mimeType;
+            videoElement.load();
+            videoElement.play();
+
+            videoElement.style.display = "";
+            document.querySelector('.video-controls').style.display = "";
+        }
+
+        const mediaFiles = $$;
+        const mediaList = document.getElementById('media-list');
+        mediaFiles.forEach(file => {
+            const listItem = document.createElement('li');
+            const button = document.createElement('button');
+            button.textContent = file;
+            button.onclick = () => play(file);
+            listItem.appendChild(button);
+            mediaList.appendChild(listItem);
+        });
+    </script>
+</body>
+</html>
